@@ -19,13 +19,21 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapGet("/api/coupon", () => {
+app.MapGet("/api/coupon", () =>
+{
     return Results.Ok(CouponStore.CouponsList);
-    });
+}).WithName("GetCoupons");
 
-app.MapGet("/api/coupon/{id:int}", (int id) => {
-    return Results.Ok(CouponStore.CouponsList.FirstOrDefault(u=>u.Id==id));
-});
+app.MapGet("/api/coupon/{id:int}", (int id) =>
+{
+    return Results.Ok(CouponStore.CouponsList.FirstOrDefault(u => u.Id == id));
+}).WithName("GetCoupon");
+
+
+
+//app.MapGet("/api/coupon/{id:int}", (int id) => {
+//    return Results.Ok(CouponStore.CouponsList.FirstOrDefault(u => u.Id == id));
+//});
 
 
 app.MapPost("/api/coupon", ([FromBody] Coupon obj) => {
@@ -39,9 +47,10 @@ app.MapPost("/api/coupon", ([FromBody] Coupon obj) => {
     }
     obj.Id=CouponStore.CouponsList.OrderByDescending(u=>u.Id).FirstOrDefault().Id+1;
     CouponStore.CouponsList.Add(obj);
-    return Results.Ok(obj);
+    return Results.CreatedAtRoute("GetCoupon",new {id=obj.Id}, obj);
+   // return Results.Created($"/api/coupon/{obj.Id}", obj);
+}).WithName("CreateCoupon");
 
-});
 app.MapPut("/api/coupon/{id:int}", () => { });
 app.MapDelete("/api/coupon/{id:int}", () => { });
 
