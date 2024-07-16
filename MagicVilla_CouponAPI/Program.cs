@@ -6,6 +6,7 @@ using MagicVilla_CouponAPI.Model;
 using MagicVilla_CouponAPI.Model.Dto;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 using System.Xml.Linq;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -92,8 +93,9 @@ app.MapPost("/api/coupon", async (IMapper _mapper,IValidator<CouponCreateDto> _v
    // return Results.Created($"/api/coupon/{obj.Id}", obj);
 }).WithName("CreateCoupon").Accepts<CouponCreateDto>("application/json").Produces<CouponDto>(201).Produces(400);
 
-APIResponse response = new() { isSuccess=false,StatusCode=System.Net.HttpStatusCode.BadRequest};
+
 app.MapPut("/api/coupon", async (IMapper _mapper, IValidator<CouponUpdateDto> _validator, [FromBody] CouponUpdateDto Coupon_u_Dto) => {
+    APIResponse response = new() { isSuccess = false, StatusCode = System.Net.HttpStatusCode.BadRequest };
     var ValidatorResult = await _validator.ValidateAsync(Coupon_u_Dto);
 
     if (!ValidatorResult.IsValid)
@@ -115,7 +117,26 @@ app.MapPut("/api/coupon", async (IMapper _mapper, IValidator<CouponUpdateDto> _v
     return Results.Ok(response);
 }).WithName("UpdateCoupon").Accepts<CouponUpdateDto>("application/json").Produces<APIResponse>(200).Produces(400); ;
 
-app.MapDelete("/api/coupon/{id:int}", () => { });
+app.MapDelete("/api/coupon/{id:int}", (int id) => {
+    APIResponse response = new() { isSuccess = false, StatusCode = System.Net.HttpStatusCode.BadRequest };
+
+
+    Coupon couponStore = CouponStore.CouponsList.FirstOrDefault(u => u.Id ==id);
+    if (couponStore != null)
+    {
+        CouponStore.CouponsList.Remove(couponStore);
+        response.isSuccess = true;
+        response.StatusCode = System.Net.HttpStatusCode.OK;
+        return Results.Ok(response);
+    }
+    else
+    {
+        response.ErrorMessages.Add("Invalid Id");
+        return Results.BadRequest(response);
+    }
+   
+
+});
 
 app.UseHttpsRedirection();
 
