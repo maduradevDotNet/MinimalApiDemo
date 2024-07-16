@@ -1,3 +1,5 @@
+using AutoMapper;
+using MagicVilla_CouponAPI;
 using MagicVilla_CouponAPI.Data;
 using MagicVilla_CouponAPI.Model;
 using MagicVilla_CouponAPI.Model.Dto;
@@ -11,6 +13,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+
+builder.Services.AddAutoMapper(typeof(MagicVilla_CouponAPI.MappingConfig));
+
 
 var app = builder.Build();
 
@@ -40,7 +46,7 @@ app.MapGet("/api/coupon/{id:int}", (int id) =>
 //});
 
 
-app.MapPost("/api/coupon", ([FromBody] CouponCreateDto Coupon_C_Dto) => {
+app.MapPost("/api/coupon", (IMapper _mapper,[FromBody] CouponCreateDto Coupon_C_Dto) => {
     if(string.IsNullOrEmpty(Coupon_C_Dto.Name))
     {
         return Results.BadRequest("Invalid Id or Code name");
@@ -49,22 +55,26 @@ app.MapPost("/api/coupon", ([FromBody] CouponCreateDto Coupon_C_Dto) => {
     {
         return Results.BadRequest("Coupon Name Already Excited");
     }
-    Coupon coupon = new Coupon {
-        IsActive= Coupon_C_Dto.IsActive,
-        Percent= Coupon_C_Dto.Percent,
-        Name= Coupon_C_Dto.Name
-    };
+    Coupon coupon = _mapper.Map<Coupon>(Coupon_C_Dto);
+
+
+    //Coupon coupon = new Coupon {
+    //    IsActive= Coupon_C_Dto.IsActive,
+    //    Percent= Coupon_C_Dto.Percent,
+    //    Name= Coupon_C_Dto.Name
+    //};
 
     coupon.Id=CouponStore.CouponsList.OrderByDescending(u=>u.Id).FirstOrDefault().Id+1;
     CouponStore.CouponsList.Add(coupon);
 
-    CouponDto couponDto = new CouponDto { 
-        Id=coupon.Id,
-        Name=coupon.Name,
-        IsActive=coupon.IsActive,
-        Percent=coupon.Percent,
-        Created=coupon.Created
-    };
+    CouponDto couponDto=_mapper.Map<CouponDto>(coupon);
+    //CouponDto couponDto = new CouponDto { 
+    //    Id=coupon.Id,
+    //    Name=coupon.Name,
+    //    IsActive=coupon.IsActive,
+    //    Percent=coupon.Percent,
+    //    Created=coupon.Created
+    //};
     return Results.CreatedAtRoute("GetCoupon",new {id= coupon.Id}, Coupon_C_Dto);
    // return Results.Created($"/api/coupon/{obj.Id}", obj);
 }).WithName("CreateCoupon").Accepts<CouponCreateDto>("application/json").Produces<CouponDto>(201).Produces(400);
