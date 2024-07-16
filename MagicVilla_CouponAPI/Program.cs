@@ -1,7 +1,9 @@
 using MagicVilla_CouponAPI.Data;
 using MagicVilla_CouponAPI.Model;
+using MagicVilla_CouponAPI.Model.Dto;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
+using System.Xml.Linq;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,20 +40,34 @@ app.MapGet("/api/coupon/{id:int}", (int id) =>
 //});
 
 
-app.MapPost("/api/coupon", ([FromBody] Coupon obj) => {
-    if(obj.Id!=0 || string.IsNullOrEmpty(obj.Name))
+app.MapPost("/api/coupon", ([FromBody] CouponCreateDto Coupon_C_Dto) => {
+    if(string.IsNullOrEmpty(Coupon_C_Dto.Name))
     {
         return Results.BadRequest("Invalid Id or Code name");
     }
-    if (CouponStore.CouponsList.FirstOrDefault(u=>u.Name.ToLower()==obj.Name.ToLower())!=null)
+    if (CouponStore.CouponsList.FirstOrDefault(u=>u.Name.ToLower()== Coupon_C_Dto.Name.ToLower())!=null)
     {
         return Results.BadRequest("Coupon Name Already Excited");
     }
-    obj.Id=CouponStore.CouponsList.OrderByDescending(u=>u.Id).FirstOrDefault().Id+1;
-    CouponStore.CouponsList.Add(obj);
-    return Results.CreatedAtRoute("GetCoupon",new {id=obj.Id}, obj);
+    Coupon coupon = new Coupon {
+        IsActive= Coupon_C_Dto.IsActive,
+        Percent= Coupon_C_Dto.Percent,
+        Name= Coupon_C_Dto.Name
+    };
+
+    coupon.Id=CouponStore.CouponsList.OrderByDescending(u=>u.Id).FirstOrDefault().Id+1;
+    CouponStore.CouponsList.Add(coupon);
+
+    CouponDto couponDto = new CouponDto { 
+        Id=coupon.Id,
+        Name=coupon.Name,
+        IsActive=coupon.IsActive,
+        Percent=coupon.Percent,
+        Created=coupon.Created
+    };
+    return Results.CreatedAtRoute("GetCoupon",new {id= coupon.Id}, Coupon_C_Dto);
    // return Results.Created($"/api/coupon/{obj.Id}", obj);
-}).WithName("CreateCoupon").Accepts<Coupon>("application/json").Produces<Coupon>(201).Produces(400);
+}).WithName("CreateCoupon").Accepts<CouponCreateDto>("application/json").Produces<CouponDto>(201).Produces(400);
 
 app.MapPut("/api/coupon/{id:int}", () => { });
 app.MapDelete("/api/coupon/{id:int}", () => { });
